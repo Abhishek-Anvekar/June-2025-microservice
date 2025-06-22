@@ -1,0 +1,59 @@
+server:
+  port: 9191
+
+spring:
+  application:
+    name: API-GATEWAY
+
+#  use this url for gateway http://localhost:9191/employees/dept/1
+#  http://localhost:9191/api/employees/dept/1 <---- This will not work because we are using filter to forward /employee/** to --> /api/employees/${segment}
+#  if filters is not using then in predicate path will be /api/employees/**
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth-service-auth-endpoints
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/auth/**
+              filters:
+                - RewritePath=/auth/(?<segment>.*), /auth/${segment}
+
+            - id: auth-service-user-endpoints
+              uri: lb://AUTH-SERVICE
+              predicates:
+                - Path=/api/user/**
+              filters:
+                - RewritePath=/api/user/(?<segment>.*), /api/user/${segment}
+
+            - id: dept-service
+              uri: lb://DEPARTMENT-SERVICE
+              predicates:
+                - Path=/departments/**
+              filters:
+                - RewritePath=/departments/(?<segment>.*), /api/departments/${segment}
+
+            - id: emp-service
+              uri: lb://EMPLOYEE-SERVICE
+              predicates:
+                - Path=/employees/**
+              filters:
+                - RewritePath=/employees/(?<segment>.*), /api/employees/${segment}
+
+#logging:
+#  level:
+#    org.springframework.cloud.gateway: DEBUG
+
+eureka:
+  instance:
+    client:
+      serverUrl:
+        defaultZone: http://localhost:8761/eureka/
+
+
+
+
+
+
+
